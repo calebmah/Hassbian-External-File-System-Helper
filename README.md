@@ -1,22 +1,20 @@
-Adafruit-Pi-ExternalRoot-helper
+Hassbian-External-File-System-Helper
 ===============================
 
-A shell script for configuring an external USB drive as root filesystem
-on a Raspberry Pi running Raspbian.  It's a companion to [Using an
-External Drive as a Raspberry Pi Root Filesystem][tutorial], which you
-should read first.
+A shell script for configuring an external USB drive as boot and root filesystems
+on a Raspberry Pi running Hassbian.
 
-Using adafruit-pi-externalroot-helper
+Using hassbian-externalfs-helper
 -------------------------------------
 
-First, read the [tutorial][tutorial].
+First, read the original [tutorial][tutorial] as well as the instructions for booting from USB, [here][bootusb].
 
-On a Raspberry Pi running Raspbian, with a USB-connected storage device you
-wish to use for your root filesystem:
+On a Raspberry Pi running [Hassbian][hassbian], with a USB-connected storage device you
+wish to use for your boot and root filesystems:
 
-    git clone git@github.com:adafruit/Adafruit-Pi-ExternalRoot-Helper.git
-    cd Adafruit-Pi-ExternalRoot-Helper
-    sudo ./adafruit-pi-externalroot-helper -d /dev/sda
+    git clone git@github.com:redlotusaustin/Hassbian-External-Root-Helper.git
+    cd Hassbian-External-Root-Helper
+    sudo ./hassbian-externalfs-helper -d /dev/sda
 
 ...where `/dev/sda` is the external USB you wish to use for a root filesystem.
 
@@ -24,7 +22,7 @@ Sources and Further Reading
 ---------------------------
 
 This script is mostly an implementation of the process outlined in paulv's
-[HOWTO: Move the filesystem to a USB stick][1] on the Raspberry Pi forums, with
+[HOWTO: Move the filesystem to a USB stick][1] on the Raspberry Pi forums, combined with [Christian Cawley's article on USB booting][http://www.makeuseof.com/tag/make-raspberry-pi-3-boot-usb/] and
 additional help from the following sources:
 
 - The Arch Linux wiki, [GUID Partition Table][2] for what a GPT is and
@@ -52,3 +50,5 @@ Along with manual / info pages for:
 [wp]: https://en.wikipedia.org/wiki/GUID_Partition_Table
 [6]: https://github.com/torvalds/linux/blob/10975933da3d65f8833d4ce98dcc2ecc63a695d6/init/do_mounts.c#L183
 [tutorial]: https://learn.adafruit.com/external-drive-as-raspberry-pi-root
+[hassbian]: https://home-assistant.io/docs/hassbian/
+[bootusb]: http://www.makeuseof.com/tag/make-raspberry-pi-3-boot-usb/
