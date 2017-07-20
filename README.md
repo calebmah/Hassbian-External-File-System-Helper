@@ -9,6 +9,8 @@ Using hassbian-externalfs-helper
 
 First, read the original [tutorial][tutorial] as well as the instructions for booting from USB, [here][bootusb].
 
+NOTE: This WILL update the firmware on your Raspberry Pi in order to boot from USB
+
 On a Raspberry Pi running [Hassbian][hassbian], with a USB-connected storage device you
 wish to use for your boot and root filesystems:
 
