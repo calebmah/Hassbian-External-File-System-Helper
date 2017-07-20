@@ -24,7 +24,7 @@ Sources and Further Reading
 ---------------------------
 
 This script is mostly an implementation of the process outlined in paulv's
-[HOWTO: Move the filesystem to a USB stick][1] on the Raspberry Pi forums, combined with [Christian Cawley's article on USB booting][http://www.makeuseof.com/tag/make-raspberry-pi-3-boot-usb/] and
+[HOWTO: Move the filesystem to a USB stick][1] on the Raspberry Pi forums, combined with [Christian Cawley's article on USB booting][bootusb] and
 additional help from the following sources:
 
 - The Arch Linux wiki, [GUID Partition Table][2] for what a GPT is and
