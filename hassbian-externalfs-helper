@@ -1,0 +1,191 @@
+#!/usr/bin/env bash
+
+# hassbian-external-file-system-helper
+# 
+# Configure a Hassbian system to use an external USB drive for the filesystem.
+#
+# See README.md for details and sources.
+
+set -e
+
+function print_version() {
+    echo "Hassbian External File System Helper v0.1.0"
+    exit 1
+}
+
+function print_help() {
+    echo "Usage: $0 -d [target device]"
+    echo "    -h            Print this help"
+    echo "    -v            Print version information"
+    echo "    -d [device]   Specify path of device to convert to root"
+    echo
+    echo "You must specify a device. See:"
+    echo "https://learn.adafruit.com/external-drive-as-raspberry-pi-root"
+    exit 1
+}
+
+
+# Display an error message and quit:
+function bail() {
+    FG="1;31m"
+    BG="40m"
+    echo -en "[\033[${FG}\033[${BG}error\033[0m] "
+    echo "$*"
+    exit 1
+}
+
+# Display an info message:
+function info() {
+    task="$1"
+    shift
+    FG="1;32m"
+    BG="40m"
+    echo -e "[\033[${FG}\033[${BG}${task}\033[0m] $*"
+}
+
+if [[ $EUID -ne 0 ]]; then
+    bail "must be run as root. try: sudo hassbian-external-file-system-helper"
+fi
+
+# Handle arguments:
+args=$(getopt -uo 'hvd:' -- $*)
+[ $? != 0 ] && print_help
+set -- $args
+
+for i
+do
+    case "$i"
+    in
+        -h)
+            print_help
+            ;;
+        -v)
+            print_version
+            ;;
+        -d)
+            target_drive="$2"
+            echo "Target drive = ${2}"
+            shift
+            shift
+            ;;
+    esac
+done
+
+if [[ ! -e "$target_drive" ]]; then
+    bail "Target ${target_drive} must be existing device (use -d /dev/foo to specify)"
+fi
+
+info "start" "Will create new ext4 filesystem on ${target_drive}"
+info "start" "If there is data on ${target_drive}, it will be lost."
+info "start" "This will ONLY work on a Raspberry Pi 3."
+read -p "Really proceed? (y)es / (n)o " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]
+then
+    echo "Quitting."
+    exit
+fi
+
+export boot_environment_ok=`vcgencmd otp_dump | grep 17: | grep 3020000a`
+if [[ ! $boot_environment_ok ]]; then
+    info "Firmware Check" "Raspberry Pi Firmware Not Updated!"
+    info "Firmware Check" "Updating Raspberry Pi Firmware"
+    apt update
+    BRANCH=next rpi-update
+    info "Firmware Check" program_usb_boot_mode=1 >> /boot/config.txt
+    info "Firmware Check" "You must reboot your Pi and then re-run this script to continue"
+    exit 1
+else
+    info "Firmware Check" "Raspberry Pi Updated. Proceeding with filesystem move"
+    sed -i '/program_usb_boot_mode/d' /boot/config.txt
+fi
+
+
+
+export target_boot_partition="${target_drive}1"
+export target_root_partition="${target_drive}2"
+
+info "dependencies" "Installing gdisk, rsync, and parted."
+    # All except gdisk are probably installed, but let's make sure.
+    apt -y install gdisk rsync parted
+
+info "fs create" "Creating ${target_root_partition}"
+    # The alternative here seems to be to pipe a series of commands
+    # to fdisk(1), similar to how it's done by raspi-config:
+    # https://github.com/asb/raspi-config/blob/3a5d75340a1f9fe5d7eebfb28fee0e24033f4fd3/raspi-config#L68
+    # This seemed to work, but I was running into weirdness because
+    # that doesn't seem to make a GPT, and later on I couldn't get
+    # partition unique GUID from gdisk.  parted(1) is also a nice
+    # option because it's scriptable and allows partition sizes to
+    # be specified in percentages.
+    # parted --script "${target_drive}" mklabel gpt
+    # parted --script --align optimal "${target_drive}" mkpart primary ext4 0% 100%
+    parted --script --align optimal "${target_drive}" \
+        mktable msdos \
+        mkpart primary fat32 0% 100M \
+        mkpart primary ext4 100M 99% \
+        align-check opt 1
+
+# Add code to move boot parition here
+
+info "fs create" "Creating fat32 filesystem on ${target_boot_partition}"
+    mkfs.vfat -n BOOT -F 32 "${target_boot_partition}"
+
+info "fs create" "Creating ext4 filesystem on ${target_root_partition}"
+    mkfs -t ext4 -L rootfs "${target_root_partition}"
+
+info "fs id" "Getting UUID of old boot partition"
+    export old_boot_uuid=`sudo blkid | grep 'mmcblk0p1:' | awk -F 'PARTUUID' '{print $2}' | awk -F '"' '{print $2}'`
+
+info "fs id" "Getting UUID of old root partition"
+    export old_root_uuid=`sudo blkid | grep 'mmcblk0p2:' | awk -F 'PARTUUID' '{print $2}' | awk -F '"' '{print $2}'`
+
+info "fs id" "Getting UUID for target boot partition"
+    eval `blkid -o export "${target_boot_partition}"`
+    export target_boot_partition_uuid=$UUID
+
+info "fs id" "Getting UUID for target root partition"
+    eval `blkid -o export "${target_root_partition}"`
+    export target_root_partition_uuid=$UUID
+
+info "fs id" "Target boot partition UUID: ${target_boot_partition_uuid}"
+
+info "fs id" "Target root partition UUID: ${target_root_partition_uuid}"
+
+info "fs copy" "Mounting ${target_root_partition} on /mnt/target"
+    #rmdir /mnt/target/
+    mkdir /mnt/target
+    mount -t ext4 "${target_root_partition}" /mnt/target
+
+
+info "fs copy" "Mounting ${target__boot_partition} on /mnt/target/boot"
+    mkdir /mnt/target/boot
+    mount -t vfat "${target_boot_partition}" /mnt/target/boot/
+
+info "fs copy" "Copying filesystem to ${target_root_partition} with rsync"
+info "fs copy" "This will take quite a while.  Please be patient!"
+    rsync -ax / /boot /mnt/target
+
+info "boot config" "Configuring boot from {$target_boot_partition}"
+    # rootdelay=5 is likely not necessary here, but seems to do no harm.
+    cp /boot/cmdline.txt /boot/cmdline.txt.bak
+    sed -i "s|root=PARTUUID=${old_root_uuid}|root=${target_root_partition} rootdelay=5|" /mnt/target/boot/cmdline.txt
+
+info "boot config" "Commenting out old root partition in /etc/fstab, adding new one"
+    # These changes are made on the new drive after copying so that they
+    # don't have to be undone in order to switch back to booting from the
+    # SD card.
+    sed -i "/${old_root_uuid}/s/^/#/" /mnt/target/etc/fstab
+    sed -i "/${old_boot_uuid}/s/^/#/" /mnt/target/etc/fstab
+    echo "/dev/disk/by-uuid/${target_boot_partition_uuid}    /boot           vfat    defaults          0       2" >> /mnt/target/etc/fstab
+    echo "/dev/disk/by-uuid/${target_root_partition_uuid}    /   ext4    defaults,noatime  0       1" >> /mnt/target/etc/fstab
+
+info "boot config" "Ok, your system should be ready. You may wish to check:"
+info "boot config" "  /mnt/target/etc/fstab"
+info "boot config" "  /mnt/target/boot/cmdline.txt"
+info "boot config" "Your new root drive is currently accessible under /mnt/target."
+info "boot config" "Your new boot drive is currently accessible under /mnt/target/boot."
+info "boot config" "In order to restart from the external device, please type:"
+info "boot config" "sudo shutdown now -h"
+info "boot config" "Then remove the SD card and turn the Raspberry Pi back on."
+info "boot config" "If you have any problems booting from the external device, simply replace the SD card."
