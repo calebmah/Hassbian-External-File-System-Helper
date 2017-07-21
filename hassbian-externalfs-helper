@@ -105,9 +105,9 @@ fi
 export target_boot_partition="${target_drive}1"
 export target_root_partition="${target_drive}2"
 
-info "dependencies" "Installing gdisk, rsync, and parted."
+info "dependencies" "Installing rsync and parted."
     # All except gdisk are probably installed, but let's make sure.
-    apt -y install gdisk rsync parted
+    apt -y install rsync parted
 
 info "fs create" "Creating ${target_root_partition}"
     # The alternative here seems to be to pipe a series of commands
