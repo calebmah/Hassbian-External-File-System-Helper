@@ -92,7 +92,7 @@ if [[ ! $boot_environment_ok ]]; then
     info "Firmware Check" "Updating Raspberry Pi Firmware"
     apt update
     BRANCH=next rpi-update
-    echo program_usb_boot_mode=1 >> /boot/config.txt
+    echo "program_usb_boot_mode=1" >> /boot/config.txt
     info "Firmware Check" "You must reboot your Pi and then re-run this script to continue"
     exit 1
 else
