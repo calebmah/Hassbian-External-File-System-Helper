@@ -15,7 +15,7 @@ On a Raspberry Pi running [Hassbian][hassbian], with a USB-connected storage dev
 wish to use for your boot and root filesystems:
 
     git clone https://github.com/redlotusaustin/Hassbian-External-File-System-Helper.git
-    cd Hassbian-External-Root-Helper
+    cd Hassbian-External-File-System-Helper/
     sudo ./hassbian-externalfs-helper -d /dev/sda
 
 ...where `/dev/sda` is the external USB you wish to use for a root filesystem.
