@@ -122,8 +122,8 @@ info "fs create" "Creating ${target_root_partition}"
     # parted --script --align optimal "${target_drive}" mkpart primary ext4 0% 100%
     parted --script --align optimal "${target_drive}" \
         mktable msdos \
-        mkpart primary fat32 50% 51% \
-        mkpart primary ext4 51% 99% \
+        mkpart primary fat32 0% 1% \
+        mkpart primary ext4 1% 25% \
         align-check opt 1
 
 # Add code to move boot parition here
