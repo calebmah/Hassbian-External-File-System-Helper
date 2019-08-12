@@ -122,8 +122,8 @@ info "fs create" "Creating ${target_root_partition}"
     # parted --script --align optimal "${target_drive}" mkpart primary ext4 0% 100%
     parted --script --align optimal "${target_drive}" \
         mktable msdos \
-        mkpart primary fat32 0% 100M \
-        mkpart primary ext4 100M 99% \
+        mkpart primary fat32 50% 51% \
+        mkpart primary ext4 51% 99% \
         align-check opt 1
 
 # Add code to move boot parition here
@@ -164,7 +164,7 @@ info "fs copy" "Mounting ${target__boot_partition} on /mnt/target/boot"
 
 info "fs copy" "Copying filesystem to ${target_root_partition} with rsync"
 info "fs copy" "This will take quite a while.  Please be patient!"
-    rsync -ax / /boot /mnt/target
+    rsync -axv / /boot /mnt/target
 
 info "boot config" "Configuring boot from {$target_boot_partition}"
     # rootdelay=5 is likely not necessary here, but seems to do no harm.

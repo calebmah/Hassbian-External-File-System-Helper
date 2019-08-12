@@ -14,7 +14,7 @@ NOTE: This WILL update the firmware on your Raspberry Pi in order to boot from U
 On a Raspberry Pi running [Hassbian][hassbian], with a USB-connected storage device you
 wish to use for your boot and root filesystems:
 
-    git clone https://github.com/redlotusaustin/Hassbian-External-File-System-Helper.git
+    git clone https://github.com/calebmah/Hassbian-External-File-System-Helper.git
     cd Hassbian-External-File-System-Helper/
     sudo ./hassbian-externalfs-helper -d /dev/sda
 
